@@ -1,0 +1,135 @@
+spring:
+  application:
+    name: demolition
+  datasource:
+    url: jdbc:h2:mem:processdb
+    username: sa
+    password: test
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+# Form field configurations
+form:
+  processes:
+    loan_application:
+      name: Loan Application
+      steps:
+        selection:
+          title: "Select Process Type"
+          fields:
+            - id: processType
+              label: "Process Type"
+              type: "select"
+              required: true
+              options:
+                - value: "loan_application"
+                  label: "Loan Application"
+          actions:
+            - id: "start"
+              label: "Start Process"
+              event: "PROCESS_SELECTED"
+        step_one:
+          title: "Personal Information"
+          fields:
+            - id: "firstName"
+              label: "First Name"
+              type: "text"
+              required: true
+            - id: "lastName"
+              label: "Last Name"
+              type: "text"
+              required: true
+            - id: "dateOfBirth"
+              label: "Date of Birth"
+              type: "date"
+              required: true
+            - id: "email"
+              label: "Email"
+              type: "email"
+              required: true
+          actions:
+            - id: "next"
+              label: "Next"
+              event: "STEP_ONE_SUBMIT"
+            - id: "reset"
+              label: "Reset"
+              event: "RESET"
+        step_two:
+          title: "Loan Details"
+          fields:
+            - id: "loanAmount"
+              label: "Loan Amount"
+              type: "number"
+              required: true
+            - id: "loanPurpose"
+              label: "Loan Purpose"
+              type: "select"
+              required: true
+              options:
+                - value: "home"
+                  label: "Home Loan"
+                - value: "car"
+                  label: "Car Loan"
+                - value: "education"
+                  label: "Education Loan"
+                - value: "personal"
+                  label: "Personal Loan"
+            - id: "loanTerm"
+              label: "Loan Term (in years)"
+              type: "number"
+              required: true
+          actions:
+            - id: "next"
+              label: "Next"
+              event: "STEP_TWO_SUBMIT"
+            - id: "back"
+              label: "Back"
+              event: "BACK"
+            - id: "reset"
+              label: "Reset"
+              event: "RESET"
+        step_three:
+          title: "Employment Details"
+          fields:
+            - id: "employerName"
+              label: "Employer Name"
+              type: "text"
+              required: true
+            - id: "employmentDuration"
+              label: "Years of Employment"
+              type: "number"
+              required: true
+            - id: "annualIncome"
+              label: "Annual Income"
+              type: "number"
+              required: true
+          actions:
+            - id: "next"
+              label: "Next"
+              event: "STEP_THREE_SUBMIT"
+            - id: "back"
+              label: "Back"
+              event: "BACK"
+            - id: "reset"
+              label: "Reset"
+              event: "RESET"
+        submission:
+          title: "Review and Submit"
+          fields: []
+          actions:
+            - id: "submit"
+              label: "Submit Application"
+              event: "FINAL_SUBMIT"
+            - id: "back"
+              label: "Back"
+              event: "BACK"
+            - id: "reset"
+              label: "Reset"
+              event: "RESET"

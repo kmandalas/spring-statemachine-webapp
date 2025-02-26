@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Multi-Step Process</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="container mx-auto p-6">
+<h2 class="text-center text-2xl font-bold">Multi-Step Process</h2>
+
+<div id="formContainer" class="mt-6">
+    <!-- Dynamic form will be loaded here -->
+</div>
+
+<script>
+    let processId = [[${processId}]];
+
+    /**
+     * Loads data and renders the forms
+     */
+    function loadStep() {
+        $.get(`/api/process/${processId}/form`, function(data) {
+            $("#formContainer").empty();
+
+            if (data.currentState === "SUBMISSION") {
+                // 🔥 Fetch process summary instead of relying only on localStorage
+                $.get(`/api/process/${processId}/summary`, function(summaryData) {
+                    localStorage.setItem("processSummary", JSON.stringify(summaryData)); // Store for backup
+                    renderReviewPage(summaryData);
+                }).fail(function() {
+                    console.warn("Failed to fetch summary, falling back to localStorage.");
+                    let storedSummary = JSON.parse(localStorage.getItem("processSummary") || "{}");
+                    renderReviewPage(storedSummary);
+                });
+
+            } else {
+                // Render form normally (existing logic)
+                let formHtml = `<h3 class="text-xl font-semibold mb-4">${data.title}</h3>
+                            <form id="stepForm" class="space-y-4">`;
+
+                // Render fields
+                data.fields.forEach(field => {
+                    formHtml += `<div>
+                                <label class="block text-sm font-medium">${field.label}</label>`;
+
+                    if (["text", "number", "email"].includes(field.type)) {
+                        formHtml += `<input type="${field.type}" class="border border-gray-300 p-2 w-full rounded" id="${field.id}" name="${field.id}" required>`;
+                    } else if (field.type === "date") {
+                        formHtml += `<input type="text" class="border border-gray-300 p-2 w-full rounded datepicker" id="${field.id}" name="${field.id}" required>`;
+                    } else if (field.type === "select") {
+                        formHtml += `<select class="border border-gray-300 p-2 w-full rounded" id="${field.id}" name="${field.id}">`;
+                        field.options.forEach(option => {
+                            formHtml += `<option value="${option.value}">${option.label}</option>`;
+                        });
+                        formHtml += `</select>`;
+                    }
+
+                    formHtml += `</div>`;
+                });
+
+                // Render actions (buttons)
+                formHtml += `<div class="mt-4 flex space-x-2">`;
+                data.actions.forEach(action => {
+                    let btnClass = action.event === "FINAL_SUBMIT" ? "bg-green-500" : "bg-blue-500";
+                    formHtml += `<button type="button"
+                                class="px-4 py-2 text-white rounded ${btnClass}"
+                                onclick="submitStep('${data.step}', '${action.event}')">
+                                ${action.label}
+                            </button>`;
+                });
+                formHtml += `</div></form>`;
+
+                $("#formContainer").html(formHtml);
+
+                // Initialize date pickers
+                $(".datepicker").flatpickr({
+                    dateFormat: "Y-m-d",
+                    maxDate: "today"
+                });
+
+                // Restore previous data if available
+                if (data.data) {
+                    for (const key in data.data) {
+                        $(`#${key}`).val(data.data[key]);
+                    }
+                }
+            }
+        }).fail(function() {
+            $("#formContainer").html(`<p class="text-red-500">Error loading form. Please try again.</p>`);
+        });
+    }
+
+    /**
+     * Renders the review page using summary data.
+     *
+     * @param summaryData
+     */
+    function renderReviewPage(summaryData) {
+        let reviewHtml = `<h3 class="text-xl font-semibold mb-4">Review and Submit</h3>`;
+        reviewHtml += `<table class="table-auto w-full border-collapse border border-gray-300">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="border border-gray-300 px-4 py-2 text-left">Step</th>
+                                <th class="border border-gray-300 px-4 py-2 text-left">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+        if (!summaryData.formData || Object.keys(summaryData.formData).length === 0) {
+            reviewHtml += `<tr><td colspan="2" class="text-center text-gray-500 py-4">No data available</td></tr>`;
+        } else {
+            Object.entries(summaryData.formData).forEach(([stepTitle, data]) => {
+                reviewHtml += `<tr>
+                        <td class="border border-gray-300 px-4 py-2 font-semibold">${stepTitle}</td>
+                        <td class="border border-gray-300 px-4 py-2">
+                            <ul class="list-disc pl-4">`;
+                Object.entries(data).forEach(([key, value]) => {
+                    let label = key.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase());
+                    reviewHtml += `<li><span class="font-semibold">${label}:</span> ${value}</li>`;
+                });
+                reviewHtml += `</ul></td></tr>`;
+            });
+        }
+
+        reviewHtml += `</tbody></table>`;
+
+        reviewHtml += `<div class="mt-4 flex space-x-2">
+                        <button type="button" class="px-4 py-2 bg-green-500 text-white rounded"
+                            onclick="submitStep('submission', 'FINAL_SUBMIT')">
+                            Submit Application
+                        </button>
+                        <button type="button" class="px-4 py-2 bg-blue-500 text-white rounded"
+                            onclick="submitStep('submission', 'BACK')">
+                            Back
+                        </button>
+                        <button type="button" class="px-4 py-2 bg-gray-500 text-white rounded"
+                            onclick="resetForm()">
+                            Reset
+                        </button>
+                    </div>`;
+
+        $("#formContainer").html(reviewHtml);
+    }
+
+    /**
+     * Submits the forms
+     *
+     * @param step
+     * @param event
+     */
+    function submitStep(step, event) {
+        // 🔥 Handle RESET client-side
+        if (event === "RESET") {
+            $("#stepForm")[0].reset(); // Clears all form fields
+            return;
+        }
+
+        let formData = {};
+
+        // If BACK is clicked, send only the event without form data
+        if (event !== "BACK") {
+            $("#stepForm").serializeArray().forEach(field => {
+                formData[field.name] = field.value;
+            });
+        }
+
+        // $.ajax({
+        //     url: `/api/process/${processId}/submit?step=${step}&event=${event}`,
+        //     type: "POST",
+        //     contentType: "application/json",
+        //     data: JSON.stringify(formData),
+        //     success: function() {
+        //         loadStep();  // Reload the form with the new step
+        //     }
+        // });
+        $.post({
+            url: `/api/process/${processId}/submit?step=${step}&event=${event}`,
+            contentType: "application/json",
+            data: JSON.stringify(formData),
+            success: function(response) {
+                if (response.currentState === "SUBMISSION") {
+                    // 🔥 Store formDataList in localStorage
+                    localStorage.setItem("formDataList", JSON.stringify(response.formDataList || []));
+                }
+                loadStep();  // Reload UI after submitting
+            }
+        }).fail(function() {
+            alert("Error submitting form. Please try again.");
+        });
+    }
+
+    $(document).ready(function() {
+        loadStep();
+    });
+</script>
+</body>
+</html>
