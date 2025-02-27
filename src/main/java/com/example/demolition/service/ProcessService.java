@@ -68,7 +68,6 @@ public class ProcessService {
         return processRepository.save(process);
     }
 
-
     @Transactional
     public Process submitStep(Long processId, String step, String uiEvent, Map<String, Object> formData) {
         Process process = processRepository.findById(processId)
