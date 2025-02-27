@@ -116,6 +116,9 @@ stateDiagram-v2
     SUBMISSION --> STEP_THREE: BACK
 ```
 
+![State Machine Diagram](https://github.com/kmandalas/spring-statemachine-webapp/blob/main/diagram-1.png)
+
+
 State transitions are controlled based on `application.yml` and `StateMachineConfig.java`
 
 ---
