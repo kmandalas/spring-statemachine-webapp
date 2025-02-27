@@ -28,7 +28,6 @@ This project implements a **dynamic, UI-driven multi-step process** using **Spri
 │
 ├── src/main/resources
 │   ├── application.yml    # Configurable Process Definitions
-│   ├── db/migration       # Database Migrations (Flyway)
 │
 ├── docker-compose.yml     # Docker Compose for PostgreSQL
 ├── README.md              # Project Documentation
