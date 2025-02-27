@@ -7,7 +7,6 @@ import com.example.demolition.repository.FormDataRepository;
 import com.example.demolition.repository.ProcessRepository;
 import com.example.demolition.statemachine.ProcessEvents;
 import com.example.demolition.statemachine.ProcessStates;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -71,7 +70,7 @@ public class ProcessService {
 
 
     @Transactional
-    public Process submitStep(Long processId, String step, String uiEvent, Map<String, Object> formData) throws JsonProcessingException {
+    public Process submitStep(Long processId, String step, String uiEvent, Map<String, Object> formData) {
         Process process = processRepository.findById(processId)
                 .orElseThrow(() -> new RuntimeException("Process not found with id: " + processId));
 
