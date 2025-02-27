@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="reviewForm">
+    <h3 class="text-xl font-semibold mb-4">Review and Submit</h3>
+
+    <table class="table-auto w-full border-collapse border border-gray-300">
+        <thead>
+        <tr class="bg-gray-100">
+            <th class="border border-gray-300 px-4 py-2 text-left">Step</th>
+            <th class="border border-gray-300 px-4 py-2 text-left">Details</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:if="${summary == null || summary.formData == null || summary.formData.isEmpty()}">
+            <td colspan="2" class="text-center text-gray-500 py-4">No data available</td>
+        </tr>
+        <tr th:each="entry : ${summary.formData}">
+            <td class="border border-gray-300 px-4 py-2 font-semibold" th:text="${entry.key}">Step Title</td>
+            <td class="border border-gray-300 px-4 py-2">
+                <ul class="list-disc pl-4">
+                    <li th:each="field : ${entry.value}">
+                        <span class="font-semibold" th:text="${#strings.capitalize(#strings.replace(field.key, '([A-Z])', ' $1'))}">Label</span>:
+                        <span th:text="${field.value}">Value</span>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <form hx-post="@{/api/process/{id}/submit(id=${form.processId})}"
+          hx-target="#formContainer"
+          hx-swap="innerHTML">
+
+        <input type="hidden" name="step" value="submission">
+
+        <div class="mt-4 flex space-x-2">
+            <button type="submit" name="event" value="FINAL_SUBMIT" class="px-4 py-2 bg-green-500 text-white rounded">
+                Submit Application
+            </button>
+            <button type="submit" name="event" value="BACK" class="px-4 py-2 bg-blue-500 text-white rounded">
+                Back
+            </button>
+            <button type="button" class="px-4 py-2 bg-gray-500 text-white rounded"
+                    hx-get="@{/api/process/{id}/form(id=${form.processId})}"
+                    hx-target="#formContainer"
+                    hx-swap="innerHTML">
+                Reset
+            </button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

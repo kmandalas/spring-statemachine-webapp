@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="stepForm">
+    <h3 class="text-xl font-semibold mb-4" th:text="${form.title}">Step Title</h3>
+
+    <form th:attr="hx-post=@{/api/process/{id}/submit(id=${form.processId})}"
+          hx-target="#formContainer"
+          hx-swap="innerHTML"
+          hx-include="this">
+
+        <input type="hidden" name="step" th:value="${form.step}">
+
+        <div class="space-y-4">
+            <div th:each="field : ${form.fields}">
+                <label class="block text-sm font-medium" th:text="${field.label}">Field Label</label>
+
+                <!-- Text, number, email inputs -->
+                <input th:if="${field.type == 'text' || field.type == 'number' || field.type == 'email'}"
+                       th:type="${field.type}"
+                       class="border border-gray-300 p-2 w-full rounded"
+                       th:id="${field.id}"
+                       th:name="${field.id}"
+                       th:value="${form.containsKey('data') && form.data != null && form.data.containsKey(field.id) ? form.data.get(field.id) : ''}"
+                       required>
+
+                <!-- Date picker -->
+                <input th:if="${field.type == 'date'}"
+                       type="text"
+                       class="border border-gray-300 p-2 w-full rounded datepicker"
+                       th:id="${field.id}"
+                       th:name="${field.id}"
+                       th:value="${form.containsKey('data') && form.data != null && form.data.containsKey(field.id) ? form.data.get(field.id) : ''}"
+                       required>
+
+                <!-- Select dropdown -->
+                <select th:if="${field.type == 'select'}"
+                        class="border border-gray-300 p-2 w-full rounded"
+                        th:id="${field.id}"
+                        th:name="${field.id}">
+                    <option th:each="option : ${field.options}"
+                            th:value="${option.value}"
+                            th:text="${option.label}"
+                            th:selected="${form.containsKey('data') && form.data != null && form.data.containsKey(field.id) && form.data.get(field.id) == option.value}">
+                        Option
+                    </option>
+                </select>
+            </div>
+
+            <div class="mt-4 flex space-x-2">
+                <button th:each="action : ${form.actions}"
+                        type="submit"
+                        th:name="event"
+                        th:value="${action.event}"
+                        th:class="'px-4 py-2 text-white rounded ' + (${action.event == 'FINAL_SUBMIT'} ? 'bg-green-500' : 'bg-blue-500')">
+                    <span th:text="${action.label}">Button</span>
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+</body>
+</html>

@@ -2,14 +2,14 @@ package com.example.demolition.controller;
 
 import com.example.demolition.entity.Process;
 import com.example.demolition.service.ProcessService;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@RestController
+@Controller
 @RequestMapping("/api/process")
 public class ProcessController {
 
@@ -20,28 +20,61 @@ public class ProcessController {
     }
 
     @PostMapping("/start")
-    public ResponseEntity<Process> startProcess(@RequestBody Map<String, String> request) {
-        String processType = request.get("processType");
-        return ResponseEntity.ok(processService.startProcess(processType));
+    public String startProcess(@RequestParam String processType, Model model) {
+        Process process = processService.startProcess(processType);
+        // Redirect using HTMX response header
+        return "redirect:/process/" + process.getId();
     }
 
     @GetMapping("/{processId}/form")
-    public ResponseEntity<Map<String, Object>> getFormDefinition(@PathVariable Long processId) {
-        return ResponseEntity.ok(processService.getFormDefinition(processId));
+    public String getFormDefinition(@PathVariable Long processId, Model model) {
+        Map<String, Object> formDef = processService.getFormDefinition(processId);
+
+        // Ensure data exists even if null
+        if (!formDef.containsKey("data")) {
+            formDef.put("data", new HashMap<>());
+        }
+
+        model.addAttribute("form", formDef);
+
+        if ("SUBMISSION".equals(formDef.get("currentState"))) {
+            Map<String, Object> summary = processService.getProcessSummary(processId);
+            model.addAttribute("summary", summary);
+            return "fragments/review-form :: reviewForm";
+        } else {
+            return "fragments/step-form :: stepForm";
+        }
     }
 
     @PostMapping("/{processId}/submit")
-    public ResponseEntity<Process> submitStep(
+    public String submitStep(
             @PathVariable Long processId,
             @RequestParam String step,
             @RequestParam String event,
-            @RequestBody(required = false) Map<String, Object> formData) throws JsonProcessingException {
-        return ResponseEntity.ok(processService.submitStep(processId, step, event, formData != null ? formData : new HashMap<>()));
+            @RequestParam Map<String, String> allParams,  // Changed from @RequestBody
+            Model model) {
+
+        // Remove step and event from the form data
+        Map<String, Object> formData = new HashMap<>(allParams);
+        formData.remove("step");
+        formData.remove("event");
+
+        processService.submitStep(
+                processId,
+                step,
+                event,
+                formData
+        );
+
+        // After submission, return the updated form
+        return getFormDefinition(processId, model);
     }
 
-    @GetMapping("/{processId}/summary")
-    public ResponseEntity<Map<String, Object>> getProcessSummary(@PathVariable Long processId) {
-        return ResponseEntity.ok(processService.getProcessSummary(processId));
+    // API endpoint for specific operations that need JSON
+    @GetMapping("/{processId}/summary-json")
+    @ResponseBody
+    public Map<String, Object> getProcessSummaryJson(@PathVariable Long processId) {
+        return processService.getProcessSummary(processId);
     }
 
 }
