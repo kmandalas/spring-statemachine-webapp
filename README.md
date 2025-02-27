@@ -104,7 +104,16 @@ GET /api/process/{processId}/summary
 The application uses **Spring State Machine** to manage step transitions, form rendering and submissions dynamically.
 
 ```
-[START] → Step One → Step Two → Step Three → Submission → [END]
+stateDiagram-v2
+    [*] --> SELECTION
+    SELECTION --> STEP_ONE: PROCESS_SELECTED
+    STEP_ONE --> STEP_TWO: STEP_ONE_SUBMIT
+    STEP_TWO --> STEP_THREE: STEP_TWO_SUBMIT
+    STEP_THREE --> SUBMISSION: STEP_THREE_SUBMIT
+    SUBMISSION --> [*]: FINAL_SUBMIT
+    STEP_TWO --> STEP_ONE: BACK
+    STEP_THREE --> STEP_TWO: BACK
+    SUBMISSION --> STEP_THREE: BACK
 ```
 
 State transitions are controlled based on `application.yml` and `StateMachineConfig.java`
