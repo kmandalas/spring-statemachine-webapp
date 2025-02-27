@@ -137,7 +137,6 @@ form:
 - **Spring State Machine**
 - **Spring Data JPA** (PostgreSQL JSONB support)
 - **Docker & Docker Compose**
-- **Flyway** (Database Migrations)
 - **Jackson** (JSON Parsing)
 
 ---
