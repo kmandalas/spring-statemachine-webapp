@@ -2,7 +2,6 @@ package com.example.demolition.controller;
 
 import com.example.demolition.entity.Process;
 import com.example.demolition.service.ProcessService;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,7 +34,7 @@ public class ProcessController {
             @PathVariable Long processId,
             @RequestParam String step,
             @RequestParam String event,
-            @RequestBody(required = false) Map<String, Object> formData) throws JsonProcessingException {
+            @RequestBody(required = false) Map<String, Object> formData) {
         return ResponseEntity.ok(processService.submitStep(processId, step, event, formData != null ? formData : new HashMap<>()));
     }
 
