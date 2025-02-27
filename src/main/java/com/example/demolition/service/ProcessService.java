@@ -8,7 +8,7 @@ import com.example.demolition.repository.ProcessRepository;
 import com.example.demolition.statemachine.ProcessEvents;
 import com.example.demolition.statemachine.ProcessStates;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +80,7 @@ public class ProcessService {
             FormData data = new FormData();
             data.setProcess(process);
             data.setStep(step);
-            data.setFormDataJson(objectMapper.writeValueAsString(formData));
+            data.setFormDataJson(objectMapper.valueToTree(formData));  // Convert Map to JsonNode
             formDataRepository.save(data);
         }
 
@@ -172,7 +172,7 @@ public class ProcessService {
         // Add previously saved data if available
         List<FormData> previousData = formDataRepository.findByProcessIdAndStep(processId, stepKey);
         if (!previousData.isEmpty()) {
-            result.put("data", parseJson(previousData.get(0).getFormDataJson()));
+            result.put("data", previousData.get(0).getFormDataJson());
         }
 
         return result;
@@ -202,12 +202,12 @@ public class ProcessService {
             latestFormData.put(entry.getStep(), entry);  // Always replaces with the latest entry
         }
 
-        // Sort steps based on YAML configuration order
-        Map<String, Map<String, Object>> sortedFormData = stepConfigMap.keySet().stream()
-                .filter(latestFormData::containsKey)  // Ensure only existing steps are included
+       // Sort steps based on YAML configuration order
+        Map<String, JsonNode> sortedFormData = stepConfigMap.keySet().stream()
+                .filter(latestFormData::containsKey)
                 .collect(Collectors.toMap(
-                        step -> step,  // Keep original key
-                        step -> parseJson(latestFormData.get(step).getFormDataJson()),  // Parse JSON data
+                        step -> step,
+                        step -> latestFormData.get(step).getFormDataJson(),
                         (existing, replacement) -> existing,
                         LinkedHashMap::new
                 ));
@@ -215,7 +215,8 @@ public class ProcessService {
         // Translate step names using YAML titles
         Map<String, Object> translatedFormData = new LinkedHashMap<>();
         sortedFormData.forEach((step, data) -> {
-            String translatedStepName = stepConfigMap.getOrDefault(step, new FormFieldConfig.StepConfig()).getTitle();
+            String translatedStepName = stepConfigMap.getOrDefault(step, new FormFieldConfig.StepConfig())
+                    .getTitle();
             translatedFormData.put(translatedStepName != null ? translatedStepName : step.replace("_", " ").toUpperCase(), data);
         });
 
@@ -244,15 +245,6 @@ public class ProcessService {
             default -> throw new IllegalArgumentException("No step key for state: " + state);
         };
     }
-
-    private Map<String, Object> parseJson(String json) {
-        try {
-            return objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Error parsing JSON: " + json, e);
-        }
-    }
-
 
     @Transactional
     public void triggerEvent(Long processId, ProcessEvents event) {

@@ -1,7 +1,12 @@
 package com.example.demolition.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.JsonNode;
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Type;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "form_data")
@@ -13,8 +18,10 @@ public class FormData {
 
     private String step;
 
-    @Column(columnDefinition = "TEXT")
-    private String formDataJson;
+    @Type(JsonBinaryType.class)
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "formDataJson", columnDefinition = "jsonb")
+    private JsonNode formDataJson;
 
     @ManyToOne
     @JoinColumn(name = "process_id")
@@ -29,11 +36,11 @@ public class FormData {
         this.step = step;
     }
 
-    public String getFormDataJson() {
+    public JsonNode getFormDataJson() {
         return formDataJson;
     }
 
-    public void setFormDataJson(String formDataJson) {
+    public void setFormDataJson(JsonNode formDataJson) {
         this.formDataJson = formDataJson;
     }
 
