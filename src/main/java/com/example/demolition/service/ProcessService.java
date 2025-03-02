@@ -1,10 +1,9 @@
 package com.example.demolition.service;
 
 import com.example.demolition.config.FormFieldConfig;
+import com.example.demolition.dto.Process;
 import com.example.demolition.entity.FormData;
-import com.example.demolition.entity.Process;
 import com.example.demolition.repository.FormDataRepository;
-import com.example.demolition.repository.ProcessRepository;
 import com.example.demolition.statemachine.ProcessEvents;
 import com.example.demolition.statemachine.ProcessStates;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -12,15 +11,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.statemachine.StateMachine;
-import org.springframework.statemachine.config.StateMachineFactory;
-import org.springframework.statemachine.support.DefaultStateMachineContext;
+import org.springframework.statemachine.StateMachineContext;
+import org.springframework.statemachine.StateMachinePersist;
+import org.springframework.statemachine.service.StateMachineService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,33 +27,31 @@ public class ProcessService {
 
     private static final Logger logger = LoggerFactory.getLogger(ProcessService.class);
 
-    private final StateMachineFactory<ProcessStates, ProcessEvents> stateMachineFactory;
-    private final ProcessRepository processRepository;
+
+    private final StateMachineService<ProcessStates, ProcessEvents> stateMachineService;
+    private final StateMachinePersist<ProcessStates, ProcessEvents, String> stateMachinePersist;
+
     private final FormDataRepository formDataRepository;
+
     private final FormFieldConfig formFieldConfig;
     private final ObjectMapper objectMapper;
 
-    public ProcessService(StateMachineFactory<ProcessStates, ProcessEvents> stateMachineFactory,
-                          ProcessRepository processRepository, FormDataRepository formDataRepository,
-                          FormFieldConfig formFieldConfig, ObjectMapper objectMapper) {
-        this.stateMachineFactory = stateMachineFactory;
-        this.processRepository = processRepository;
+    public ProcessService(StateMachineService<ProcessStates, ProcessEvents> stateMachineService,
+                          StateMachinePersist<ProcessStates, ProcessEvents, String> stateMachinePersist,
+                          FormDataRepository formDataRepository,
+                          FormFieldConfig formFieldConfig,
+                          ObjectMapper objectMapper) {
+        this.stateMachineService = stateMachineService;
+        this.stateMachinePersist = stateMachinePersist;
         this.formDataRepository = formDataRepository;
         this.formFieldConfig = formFieldConfig;
         this.objectMapper = objectMapper;
     }
 
-    @Transactional
     public Process startProcess(String processType) {
-        Process process = new Process();
-        process.setProcessType(processType);
-        process.setCurrentState(ProcessStates.PROCESS_SELECTION.name()); // ✅ Correct starting state
-        process = processRepository.save(process);
-
         // Start state machine
-        StateMachine<ProcessStates, ProcessEvents> stateMachine = stateMachineFactory.getStateMachine();
-        stateMachine.getExtendedState().getVariables().put("processId", process.getId());
-        stateMachine.start();
+        var processId = UUID.randomUUID().toString();
+        StateMachine<ProcessStates, ProcessEvents> stateMachine = stateMachineService.acquireStateMachine(processId);
 
         // 🔥 Ensure `PROCESS_SELECTED` is sent and accepted!
         boolean accepted = stateMachine.sendEvent(ProcessEvents.PROCESS_SELECTED);
@@ -64,19 +61,29 @@ public class ProcessService {
         ProcessStates newState = stateMachine.getState().getId();
         logger.info("🚀 New state (after PROCESS_SELECTED): " + newState);
 
-        process.setCurrentState(newState.name());
-        return processRepository.save(process);
+        try {
+            var ctx = stateMachinePersist.read(processId);
+            ctx.getExtendedState().getVariables().put("processId", processId);
+            ctx.getExtendedState().getVariables().put("type", processType);
+            ctx.getExtendedState().getVariables().put("createdAt", LocalDateTime.now());
+            stateMachinePersist.write(ctx, processId);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return new Process(processId, newState.name());
     }
 
-    @Transactional
-    public Process submitStep(Long processId, String step, String uiEvent, Map<String, Object> formData) {
-        Process process = processRepository.findById(processId)
-                .orElseThrow(() -> new RuntimeException("Process not found with id: " + processId));
-
+    public Process submitStep(String processId, String step, String uiEvent, Map<String, Object> formData) {
+        StateMachineContext<ProcessStates, ProcessEvents> stateMachineContext;
+        try {
+            stateMachineContext = stateMachinePersist.read(processId);
+        } catch (Exception e) {
+            throw new RuntimeException("Process not found with id: " + processId);
+        }
         // If the event is not BACK, save form data
         if (!"BACK".equals(uiEvent)) {
             FormData data = new FormData();
-            data.setProcess(process);
+            data.setProcessId(processId);
             data.setStep(step);
             data.setFormDataJson(objectMapper.valueToTree(formData));  // Convert Map to JsonNode
             formDataRepository.save(data);
@@ -87,34 +94,12 @@ public class ProcessService {
         logger.info("🔄 Sending event: " + processEvent);
 
         // Load the persisted state machine
-        StateMachine<ProcessStates, ProcessEvents> stateMachine = stateMachineFactory.getStateMachine(processId.toString());
-        try {
-            stateMachine.stop();
-
-            stateMachine.getStateMachineAccessor().doWithAllRegions(accessor -> {
-                accessor.resetStateMachine(
-                        new DefaultStateMachineContext<>(
-                                ProcessStates.valueOf(process.getCurrentState()),
-                                null,
-                                null,
-                                null
-                        )
-                );
-            });
-
-            stateMachine.start();
-        } catch (Exception e) {
-            throw new RuntimeException("❌ Failed to restore state machine", e);
-        }
+        StateMachine<ProcessStates, ProcessEvents> stateMachine = stateMachineService.acquireStateMachine(processId);
+        stateMachine.getExtendedState().getVariables().putAll(stateMachineContext.getExtendedState().getVariables());
 
         // Log current state before sending event
         ProcessStates currentState = stateMachine.getState().getId();
         logger.info("🧐 Current state before event: " + currentState);
-
-        if (!currentState.equals(ProcessStates.valueOf(process.getCurrentState()))) {
-            throw new RuntimeException("❌ State machine is out of sync! DB state: "
-                    + process.getCurrentState() + ", State machine: " + currentState);
-        }
 
         // Send event
         boolean accepted = stateMachine.sendEvent(processEvent);
@@ -128,29 +113,23 @@ public class ProcessService {
         ProcessStates newState = stateMachine.getState().getId();
         logger.info("🚀 New state (after event): " + newState);
 
-        // Persist new state
-        try {
-            process.setCurrentState(newState.name());
-            processRepository.save(process);
-        } catch (Exception e) {
-            throw new RuntimeException("❌ Failed to persist state machine", e);
-        }
-
-        logger.info("💾 State saved in DB: " + process.getCurrentState());
-        return process;
+        return new Process(processId, newState.name());
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> getFormDefinition(Long processId) {
-        Process process = processRepository.findById(processId)
-                .orElseThrow(() -> new RuntimeException("Process not found with id: " + processId));
+    public Map<String, Object> getFormDefinition(String processId) {
+        StateMachineContext<ProcessStates, ProcessEvents> stateMachineContext;
+        try {
+            stateMachineContext = stateMachinePersist.read(processId);
+        } catch (Exception e) {
+            throw new RuntimeException("Process not found with id: " + processId);
+        }
+        String stepKey = stateToStepKey(stateMachineContext.getState());
 
-        ProcessStates currentState = ProcessStates.valueOf(process.getCurrentState());
-        String stepKey = stateToStepKey(currentState);
-
-        FormFieldConfig.ProcessConfig processConfig = formFieldConfig.getProcesses().get(process.getProcessType());
+        String processType = (String) stateMachineContext.getExtendedState().getVariables().get("type");
+        FormFieldConfig.ProcessConfig processConfig = formFieldConfig.getProcesses().get(processType);
         if (processConfig == null) {
-            throw new RuntimeException("Process type not configured: " + process.getProcessType());
+            throw new RuntimeException("Process type not configured: " + processType);
         }
 
         FormFieldConfig.StepConfig stepConfig = processConfig.getSteps().get(stepKey);
@@ -160,8 +139,8 @@ public class ProcessService {
 
         Map<String, Object> result = new HashMap<>();
         result.put("processId", processId);
-        result.put("processType", process.getProcessType());
-        result.put("currentState", currentState.name());
+        result.put("processType", processType);
+        result.put("currentState", stateMachineContext.getState());
         result.put("step", stepKey);
         result.put("title", stepConfig.getTitle());
         result.put("fields", stepConfig.getFields());
@@ -177,35 +156,38 @@ public class ProcessService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> getProcessSummary(Long processId) {
-        Process process = processRepository.findById(processId)
-                .orElseThrow(() -> new RuntimeException("Process not found"));
-
+    public Map<String, Object> getProcessSummary(String processId) {
+        StateMachineContext<ProcessStates, ProcessEvents> stateMachineContext;
+        try {
+            stateMachineContext = stateMachinePersist.read(processId);
+        } catch (Exception e) {
+            throw new RuntimeException("Process not found with id: " + processId);
+        }
+        String processType = (String) stateMachineContext.getExtendedState().getVariables().get("type");
         Map<String, Object> summary = new LinkedHashMap<>();
-        summary.put("processId", process.getId());
-        summary.put("processType", process.getProcessType());
-        summary.put("currentState", process.getCurrentState());
+        summary.put("processId", processId);
+        summary.put("processType", processType);
+        summary.put("currentState", stateMachineContext.getState());
 
         // Retrieve step configuration from YAML
-        FormFieldConfig.ProcessConfig processConfig = formFieldConfig.getProcesses().get(process.getProcessType());
+        FormFieldConfig.ProcessConfig processConfig = formFieldConfig.getProcesses().get(processType);
         if (processConfig == null) {
-            throw new RuntimeException("Process configuration not found for type: " + process.getProcessType());
+            throw new RuntimeException("Process configuration not found for type: " + processType);
         }
 
         Map<String, FormFieldConfig.StepConfig> stepConfigMap = processConfig.getSteps();
 
         // Keep only the latest entry per step
-        Map<String, FormData> latestFormData = new HashMap<>();
-        for (FormData entry : process.getFormDataList()) {
-            latestFormData.put(entry.getStep(), entry);  // Always replaces with the latest entry
-        }
+        var latestFormData = formDataRepository.findLatestFormDataByProcess(processId);
+        Map<String, FormData> latestFormDataMap = latestFormData.stream()
+                .collect(Collectors.toMap(FormData::getStep, Function.identity()));
 
        // Sort steps based on YAML configuration order
         Map<String, JsonNode> sortedFormData = stepConfigMap.keySet().stream()
-                .filter(latestFormData::containsKey)
+                .filter(latestFormDataMap::containsKey)
                 .collect(Collectors.toMap(
                         step -> step,
-                        step -> latestFormData.get(step).getFormDataJson(),
+                        step -> latestFormDataMap.get(step).getFormDataJson(),
                         (existing, replacement) -> existing,
                         LinkedHashMap::new
                 ));
@@ -242,26 +224,6 @@ public class ProcessService {
             case PROCESS_SELECTION -> "selection";
             default -> throw new IllegalArgumentException("No step key for state: " + state);
         };
-    }
-
-    @Transactional
-    public void triggerEvent(Long processId, ProcessEvents event) {
-        Process process = processRepository.findById(processId)
-                .orElseThrow(() -> new RuntimeException("Process not found with id: " + processId));
-
-        StateMachine<ProcessStates, ProcessEvents> stateMachine = stateMachineFactory.getStateMachine();
-        stateMachine.getExtendedState().getVariables().put("processId", processId);
-
-        // Start the state machine
-        stateMachine.start();
-
-        // Send the event
-        stateMachine.sendEvent(event);
-
-        // Update process state
-        ProcessStates newState = stateMachine.getState().getId();
-        process.setCurrentState(newState.name());
-        processRepository.save(process);
     }
 
 }

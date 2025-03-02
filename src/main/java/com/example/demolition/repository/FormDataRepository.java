@@ -11,10 +11,10 @@ import java.util.List;
 @Repository
 public interface FormDataRepository extends JpaRepository<FormData, Long> {
 
-    List<FormData> findByProcessIdAndStep(Long processId, String step);
+    List<FormData> findByProcessIdAndStep(String processId, String step);
 
-    @Query("SELECT f FROM FormData f WHERE f.process.id = :processId AND f.id IN " +
-            "(SELECT MAX(f2.id) FROM FormData f2 WHERE f2.process.id = :processId GROUP BY f2.step)")
-    List<FormData> findLatestFormDataByProcess(@Param("processId") Long processId);
+    @Query("SELECT f FROM FormData f WHERE f.processId = :processId AND f.id IN " +
+            "(SELECT MAX(f2.id) FROM FormData f2 WHERE f2.processId = :processId GROUP BY f2.step)")
+    List<FormData> findLatestFormDataByProcess(@Param("processId") String processId);
 
 }

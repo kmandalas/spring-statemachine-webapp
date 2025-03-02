@@ -1,7 +1,5 @@
 package com.example.demolition.config;
 
-import com.example.demolition.entity.Process;
-import com.example.demolition.repository.ProcessRepository;
 import com.example.demolition.statemachine.ProcessEvents;
 import com.example.demolition.statemachine.ProcessStates;
 import org.slf4j.Logger;
@@ -11,15 +9,18 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter;
+import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.statemachine.config.builders.StateMachineConfigurationConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 import org.springframework.statemachine.listener.StateMachineListener;
 import org.springframework.statemachine.listener.StateMachineListenerAdapter;
+import org.springframework.statemachine.persist.StateMachineRuntimePersister;
+import org.springframework.statemachine.service.DefaultStateMachineService;
+import org.springframework.statemachine.service.StateMachineService;
 import org.springframework.statemachine.state.State;
 
 import java.util.EnumSet;
-import java.util.Optional;
 
 @Configuration
 @EnableStateMachineFactory
@@ -27,11 +28,10 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<Proces
 
     private static final Logger logger = LoggerFactory.getLogger(StateMachineConfig.class);
 
-    private final ProcessRepository processRepository;
-    // private final JpaStateMachineRepository stateMachineRepository;
+    private final StateMachineRuntimePersister<ProcessStates, ProcessEvents, String> stateMachineRuntimePersister;
 
-    public StateMachineConfig(ProcessRepository processRepository) {
-        this.processRepository = processRepository;
+    public StateMachineConfig(StateMachineRuntimePersister<ProcessStates, ProcessEvents, String> stateMachineRuntimePersister) {
+        this.stateMachineRuntimePersister = stateMachineRuntimePersister;
     }
 
     @Override
@@ -51,6 +51,7 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<Proces
                 .source(ProcessStates.PROCESS_SELECTION)
                 .target(ProcessStates.STEP_ONE)
                 .event(ProcessEvents.PROCESS_SELECTED)
+                .action(saveProcessAction())
                 .and()
                 .withExternal()
                 .source(ProcessStates.STEP_ONE)
@@ -116,8 +117,11 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<Proces
     public void configure(StateMachineConfigurationConfigurer<ProcessStates, ProcessEvents> config) throws Exception {
         config
                 .withConfiguration()
-                .autoStartup(true)
-                .listener(listener());
+//                .autoStartup(true)
+                .listener(listener())
+                .and()
+                .withPersistence()
+                .runtimePersister(stateMachineRuntimePersister);
     }
 
     @Bean
@@ -136,26 +140,15 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<Proces
     public Action<ProcessStates, ProcessEvents> saveProcessAction() {
         return context -> {
             Long processId = (Long) context.getExtendedState().getVariables().get("processId");
-            if (processId != null) {
-                Optional<Process> processOpt = processRepository.findById(processId);
-                if (processOpt.isPresent()) {
-                    Process process = processOpt.get();
-                    process.setCurrentState(context.getTarget().getId().name());
-                    processRepository.save(process);
-                }
-            }
+            // add actions here...
         };
     }
 
-//    @Bean
-//    public StateMachineRuntimePersister<ProcessStates, ProcessEvents, String> stateMachineRuntimePersister() {
-//        return new JpaPersistingStateMachineInterceptor<>(stateMachineRepository);
-//    }
-//
-//    @Bean
-//    public StateMachinePersister<ProcessStates, ProcessEvents, String> stateMachinePersister(
-//            StateMachineRuntimePersister<ProcessStates, ProcessEvents, String> runtimePersister) {
-//        return new DefaultStateMachinePersister<>(runtimePersister);
-//    }
+    @Bean
+    public StateMachineService<ProcessStates, ProcessEvents> stateMachineService(
+            StateMachineFactory<ProcessStates, ProcessEvents> stateMachineFactory,
+            StateMachineRuntimePersister<ProcessStates, ProcessEvents, String> stateMachineRuntimePersister) {
+        return new DefaultStateMachineService<ProcessStates, ProcessEvents>(stateMachineFactory, stateMachineRuntimePersister);
+    }
 
 }
