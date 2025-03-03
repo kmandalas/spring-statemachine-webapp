@@ -3,6 +3,7 @@ package com.example.demolition.service;
 import com.example.demolition.config.FormFieldConfig;
 import com.example.demolition.dto.Process;
 import com.example.demolition.entity.FormData;
+import com.example.demolition.exception.ProcessNotFoundException;
 import com.example.demolition.repository.FormDataRepository;
 import com.example.demolition.statemachine.ProcessEvents;
 import com.example.demolition.statemachine.ProcessStates;
@@ -74,12 +75,7 @@ public class ProcessService {
     }
 
     public Process submitStep(String processId, String step, String uiEvent, Map<String, Object> formData) {
-        StateMachineContext<ProcessStates, ProcessEvents> stateMachineContext;
-        try {
-            stateMachineContext = stateMachinePersist.read(processId);
-        } catch (Exception e) {
-            throw new RuntimeException("Process not found with id: " + processId);
-        }
+        StateMachineContext<ProcessStates, ProcessEvents> stateMachineContext = loadProcessContext(processId);
         // If the event is not BACK, save form data
         if (!"BACK".equals(uiEvent)) {
             FormData data = new FormData();
@@ -118,15 +114,10 @@ public class ProcessService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getFormDefinition(String processId) {
-        StateMachineContext<ProcessStates, ProcessEvents> stateMachineContext;
-        try {
-            stateMachineContext = stateMachinePersist.read(processId);
-        } catch (Exception e) {
-            throw new RuntimeException("Process not found with id: " + processId);
-        }
+        StateMachineContext<ProcessStates, ProcessEvents> stateMachineContext = loadProcessContext(processId);
+        String processType = (String) stateMachineContext.getExtendedState().getVariables().get("type");
         String stepKey = stateToStepKey(stateMachineContext.getState());
 
-        String processType = (String) stateMachineContext.getExtendedState().getVariables().get("type");
         FormFieldConfig.ProcessConfig processConfig = formFieldConfig.getProcesses().get(processType);
         if (processConfig == null) {
             throw new RuntimeException("Process type not configured: " + processType);
@@ -157,13 +148,9 @@ public class ProcessService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getProcessSummary(String processId) {
-        StateMachineContext<ProcessStates, ProcessEvents> stateMachineContext;
-        try {
-            stateMachineContext = stateMachinePersist.read(processId);
-        } catch (Exception e) {
-            throw new RuntimeException("Process not found with id: " + processId);
-        }
+        StateMachineContext<ProcessStates, ProcessEvents> stateMachineContext = loadProcessContext(processId);
         String processType = (String) stateMachineContext.getExtendedState().getVariables().get("type");
+
         Map<String, Object> summary = new LinkedHashMap<>();
         summary.put("processId", processId);
         summary.put("processType", processType);
@@ -202,6 +189,20 @@ public class ProcessService {
 
         summary.put("formData", translatedFormData);
         return summary;
+    }
+
+    private StateMachineContext<ProcessStates, ProcessEvents> loadProcessContext(String processId) {
+        StateMachineContext<ProcessStates, ProcessEvents> stateMachineContext;
+        try {
+            stateMachineContext = stateMachinePersist.read(processId);
+            if (stateMachineContext == null) {
+                throw new ProcessNotFoundException("Process not found with id: " + processId);
+            }
+        } catch (Exception e) {
+            throw new ProcessNotFoundException("Process not found with id: " + processId);
+        }
+
+        return stateMachineContext;
     }
 
     private ProcessEvents getProcessEvent(String event) {

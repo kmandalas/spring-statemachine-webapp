@@ -1,7 +1,9 @@
 package com.example.demolition.controller;
 
 import com.example.demolition.dto.Process;
+import com.example.demolition.exception.ProcessNotFoundException;
 import com.example.demolition.service.ProcessService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,6 +43,13 @@ public class ProcessController {
     @GetMapping("/{processId}/summary")
     public ResponseEntity<Map<String, Object>> getProcessSummary(@PathVariable String processId) {
         return ResponseEntity.ok(processService.getProcessSummary(processId));
+    }
+
+    @ExceptionHandler(ProcessNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleProcessNotFoundException(ProcessNotFoundException ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("error", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
 }
