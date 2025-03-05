@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             id="Definitions_loanApp"
+             targetNamespace="http://bpmn.io/schema/bpmn">
+
+    <process id="loanApplicationProcess_v1" name="Loan Application Process" isExecutable="true" camunda:historyTimeToLive="180">
+
+        <startEvent id="startEvent" name="Start"/>
+        <sequenceFlow id="flow1" sourceRef="startEvent" targetRef="personalInformation"/>
+
+        <userTask id="personalInformation" name="Personal Information" camunda:formKey="personal-information"/>
+        <sequenceFlow id="flow2" sourceRef="personalInformation" targetRef="loanDetails"/>
+
+        <!-- Loan Details Step with Exclusive Gateway for BACK -->
+        <userTask id="loanDetails" name="Loan Details" camunda:formKey="loan-details"/>
+        <sequenceFlow id="toLoanDetailsGateway" sourceRef="loanDetails" targetRef="loanDetailsGateway"/>
+        <exclusiveGateway id="loanDetailsGateway"/>
+        <sequenceFlow id="flow3" sourceRef="loanDetailsGateway" targetRef="employmentDetails">
+            <conditionExpression xsi:type="tFormalExpression">${uiEvent != 'BACK'}</conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow id="back2" sourceRef="loanDetailsGateway" targetRef="personalInformation">
+            <conditionExpression xsi:type="tFormalExpression">${uiEvent == 'BACK'}</conditionExpression>
+        </sequenceFlow>
+
+        <!-- Employment Details Step with Exclusive Gateway for BACK -->
+        <userTask id="employmentDetails" name="Employment Details" camunda:formKey="employment-details"/>
+        <sequenceFlow id="toEmploymentDetailsGateway" sourceRef="employmentDetails" targetRef="employmentDetailsGateway"/>
+        <exclusiveGateway id="employmentDetailsGateway"/>
+        <sequenceFlow id="flow4" sourceRef="employmentDetailsGateway" targetRef="submission">
+            <conditionExpression xsi:type="tFormalExpression">${uiEvent != 'BACK'}</conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow id="back3" sourceRef="employmentDetailsGateway" targetRef="loanDetails">
+            <conditionExpression xsi:type="tFormalExpression">${uiEvent == 'BACK'}</conditionExpression>
+        </sequenceFlow>
+
+        <!-- Submission Step with Exclusive Gateway for BACK -->
+        <userTask id="submission" name="Review and Submit" camunda:formKey="submission"/>
+        <sequenceFlow id="toSubmissionGateway" sourceRef="submission" targetRef="submissionGateway"/>
+        <exclusiveGateway id="submissionGateway"/>
+        <sequenceFlow id="flow5" sourceRef="submissionGateway" targetRef="endEvent">
+            <conditionExpression xsi:type="tFormalExpression">${uiEvent != 'BACK'}</conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow id="back4" sourceRef="submissionGateway" targetRef="employmentDetails">
+            <conditionExpression xsi:type="tFormalExpression">${uiEvent == 'BACK'}</conditionExpression>
+        </sequenceFlow>
+
+        <endEvent id="endEvent" name="End"/>
+    </process>
+</definitions>

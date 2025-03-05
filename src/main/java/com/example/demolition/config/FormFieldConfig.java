@@ -4,6 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -15,7 +16,7 @@ public class FormFieldConfig {
 
     public static class ProcessConfig {
         private String name;
-        private Map<String, StepConfig> steps = new HashMap<>();
+        private Map<String, StepConfig> steps = new LinkedHashMap<>();
 
         public String getName() {
             return name;

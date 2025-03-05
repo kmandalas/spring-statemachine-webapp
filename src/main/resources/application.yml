@@ -18,27 +18,35 @@ spring:
             non_contextual_creation: true
     show-sql: true
 
+camunda:
+  bpm:
+    database:
+      type: postgres
+    deployment:
+      auto: true
+    history-level: full
+
 # Form field configurations
 form:
   processes:
     loan_application:
       name: Loan Application
       steps:
-        selection:
-          title: "Select Process Type"
-          fields:
-            - id: processType
-              label: "Process Type"
-              type: "select"
-              required: true
-              options:
-                - value: "loan_application"
-                  label: "Loan Application"
-          actions:
-            - id: "start"
-              label: "Start Process"
-              event: "PROCESS_SELECTED"
-        step_one:
+#        selection:
+#          title: "Select Process Type"
+#          fields:
+#            - id: processType
+#              label: "Process Type"
+#              type: "select"
+#              required: true
+#              options:
+#                - value: "loan_application"
+#                  label: "Loan Application"
+#          actions:
+#            - id: "start"
+#              label: "Start Process"
+#              event: "PROCESS_SELECTED"
+        personalInformation:
           title: "Personal Information"
           fields:
             - id: "firstName"
@@ -64,7 +72,7 @@ form:
             - id: "reset"
               label: "Reset"
               event: "RESET"
-        step_two:
+        loanDetails:
           title: "Loan Details"
           fields:
             - id: "loanAmount"
@@ -98,7 +106,7 @@ form:
             - id: "reset"
               label: "Reset"
               event: "RESET"
-        step_three:
+        employmentDetails:
           title: "Employment Details"
           fields:
             - id: "employerName"

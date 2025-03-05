@@ -3,7 +3,18 @@ services:
     image: 'postgres:latest'
     environment:
       - 'POSTGRES_DB=demo'
-      - 'POSTGRES_PASSWORD=mypassword'
       - 'POSTGRES_USER=myuser'
+      - 'POSTGRES_PASSWORD=mypassword'
     ports:
       - '5432:5432'
+  camunda:
+    image: camunda/camunda-bpm-platform:7.20.0
+    container_name: camunda-cockpit
+    environment:
+      - DB_DRIVER=org.postgresql.Driver
+      - DB_URL=jdbc:postgresql://postgres:5432/demo
+      - DB_USERNAME=myuser
+      - DB_PASSWORD=mypassword
+      - WAIT_FOR=postgres:5432
+    ports:
+      - "8081:8080" # Exposing Cockpit on a different port since Spring Boot app uses 8080

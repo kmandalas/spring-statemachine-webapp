@@ -15,7 +15,7 @@
 </div>
 
 <script>
-    let processId = [[${processId}]];
+    let processId = "[[${processId}]]";
 
     /**
      * Loads data and renders the forms
@@ -24,7 +24,7 @@
         $.get(`/api/process/${processId}/form`, function(data) {
             $("#formContainer").empty();
 
-            if (data.currentState === "SUBMISSION") {
+            if (data.currentState === "submission") {
                 // 🔥 Fetch process summary instead of relying only on localStorage
                 $.get(`/api/process/${processId}/summary`, function(summaryData) {
                     localStorage.setItem("processSummary", JSON.stringify(summaryData)); // Store for backup
@@ -151,44 +151,45 @@
      * @param event
      */
     function submitStep(step, event) {
-        // 🔥 Handle RESET client-side
         if (event === "RESET") {
-            $("#stepForm")[0].reset(); // Clears all form fields
+            $("#stepForm")[0].reset();
             return;
         }
 
         let formData = {};
-
-        // If BACK is clicked, send only the event without form data
         if (event !== "BACK") {
             $("#stepForm").serializeArray().forEach(field => {
                 formData[field.name] = field.value;
             });
         }
 
-        // $.ajax({
-        //     url: `/api/process/${processId}/submit?step=${step}&event=${event}`,
-        //     type: "POST",
-        //     contentType: "application/json",
-        //     data: JSON.stringify(formData),
-        //     success: function() {
-        //         loadStep();  // Reload the form with the new step
-        //     }
-        // });
         $.post({
             url: `/api/process/${processId}/submit?step=${step}&event=${event}`,
             contentType: "application/json",
             data: JSON.stringify(formData),
             success: function(response) {
-                if (response.currentState === "SUBMISSION") {
-                    // 🔥 Store formDataList in localStorage
-                    localStorage.setItem("formDataList", JSON.stringify(response.formDataList || []));
+                if (response.currentState === "COMPLETED") {
+                    showSuccessScreen();
+                } else {
+                    loadStep();
                 }
-                loadStep();  // Reload UI after submitting
             }
         }).fail(function() {
             alert("Error submitting form. Please try again.");
         });
+    }
+
+    function showSuccessScreen() {
+        $("#formContainer").html(`
+            <div class="text-center bg-green-100 p-6 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold text-green-700">🎉 Success!</h2>
+                <p class="mt-2 text-lg">Your process has been completed successfully.</p>
+                <button class="mt-4 px-6 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                        onclick="window.location.href='http://localhost:8080/'">
+                    Start New Process
+                </button>
+            </div>
+        `);
     }
 
     $(document).ready(function() {
