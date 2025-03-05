@@ -130,9 +130,6 @@ public class ProcessService {
             throw new RuntimeException("Process configuration not found for type: " + processType);
         }
 
-        // Retrieve step configuration from YAML — use LinkedHashMap to maintain order
-        Map<String, FormFieldConfig.StepConfig> stepConfigMap = new LinkedHashMap<>(processConfig.getSteps());
-
         // Retrieve the latest form data and map it by step
         var latestFormData = formDataRepository.findLatestFormDataByProcess(processId);
         Map<String, FormData> latestFormDataMap = latestFormData.stream()
@@ -140,7 +137,7 @@ public class ProcessService {
 
         // Sort and translate form data based on YAML step order
         Map<String, Object> sortedFormData = new LinkedHashMap<>();
-        stepConfigMap.forEach((step, stepConfig) -> {
+        processConfig.getSteps().forEach((step, stepConfig) -> {
             if (latestFormDataMap.containsKey(step)) {
                 String stepTitle = stepConfig.getTitle(); // YAML title
                 sortedFormData.put(
