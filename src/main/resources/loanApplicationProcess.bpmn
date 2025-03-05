@@ -11,10 +11,10 @@
         <startEvent id="startEvent" name="Start" />
         <sequenceFlow id="flow1" sourceRef="startEvent" targetRef="personalInformation" />
 
-        <userTask id="personalInformation" name="Personal Information" camunda:formKey="personal-information" />
+        <userTask id="personalInformation" name="Personal Information" />
         <sequenceFlow id="flow2" sourceRef="personalInformation" targetRef="loanDetails" />
 
-        <userTask id="loanDetails" name="Loan Details" camunda:formKey="loan-details" />
+        <userTask id="loanDetails" name="Loan Details" />
         <sequenceFlow id="toLoanDetailsGateway" sourceRef="loanDetails" targetRef="loanDetailsGateway" />
         <exclusiveGateway id="loanDetailsGateway" />
         <sequenceFlow id="flow3" sourceRef="loanDetailsGateway" targetRef="employmentDetails">
@@ -24,7 +24,7 @@
             <conditionExpression xsi:type="tFormalExpression">${uiEvent == 'BACK'}</conditionExpression>
         </sequenceFlow>
 
-        <userTask id="employmentDetails" name="Employment Details" camunda:formKey="employment-details" />
+        <userTask id="employmentDetails" name="Employment Details" />
         <sequenceFlow id="toEmploymentDetailsGateway" sourceRef="employmentDetails" targetRef="employmentDetailsGateway" />
         <exclusiveGateway id="employmentDetailsGateway" />
         <sequenceFlow id="flow4" sourceRef="employmentDetailsGateway" targetRef="submission">
@@ -34,7 +34,7 @@
             <conditionExpression xsi:type="tFormalExpression">${uiEvent == 'BACK'}</conditionExpression>
         </sequenceFlow>
 
-        <userTask id="submission" name="Review and Submit" camunda:formKey="submission" />
+        <userTask id="submission" name="Review and Submit" />
         <sequenceFlow id="toSubmissionGateway" sourceRef="submission" targetRef="submissionGateway" />
         <exclusiveGateway id="submissionGateway" />
         <sequenceFlow id="flow5" sourceRef="submissionGateway" targetRef="endEvent">
