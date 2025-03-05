@@ -2,52 +2,141 @@
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
              xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
              xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
              xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
-             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-             id="Definitions_loanApp"
-             targetNamespace="http://bpmn.io/schema/bpmn">
-
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_loanApp" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.32.0">
     <process id="loanApplicationProcess_v1" name="Loan Application Process" isExecutable="true" camunda:historyTimeToLive="180">
-
-        <startEvent id="startEvent" name="Start"/>
-        <sequenceFlow id="flow1" sourceRef="startEvent" targetRef="personalInformation"/>
-
-        <userTask id="personalInformation" name="Personal Information" camunda:formKey="personal-information"/>
-        <sequenceFlow id="flow2" sourceRef="personalInformation" targetRef="loanDetails"/>
-
-        <!-- Loan Details Step with Exclusive Gateway for BACK -->
-        <userTask id="loanDetails" name="Loan Details" camunda:formKey="loan-details"/>
-        <sequenceFlow id="toLoanDetailsGateway" sourceRef="loanDetails" targetRef="loanDetailsGateway"/>
-        <exclusiveGateway id="loanDetailsGateway"/>
+        <startEvent id="startEvent" name="Start" />
+        <sequenceFlow id="flow1" sourceRef="startEvent" targetRef="personalInformation" />
+        <userTask id="personalInformation" name="Personal Information" camunda:formKey="personal-information" />
+        <sequenceFlow id="flow2" sourceRef="personalInformation" targetRef="loanDetails" />
+        <userTask id="loanDetails" name="Loan Details" camunda:formKey="loan-details" />
+        <sequenceFlow id="toLoanDetailsGateway" sourceRef="loanDetails" targetRef="loanDetailsGateway" />
+        <exclusiveGateway id="loanDetailsGateway" />
         <sequenceFlow id="flow3" sourceRef="loanDetailsGateway" targetRef="employmentDetails">
             <conditionExpression xsi:type="tFormalExpression">${uiEvent != 'BACK'}</conditionExpression>
         </sequenceFlow>
         <sequenceFlow id="back2" sourceRef="loanDetailsGateway" targetRef="personalInformation">
             <conditionExpression xsi:type="tFormalExpression">${uiEvent == 'BACK'}</conditionExpression>
         </sequenceFlow>
-
-        <!-- Employment Details Step with Exclusive Gateway for BACK -->
-        <userTask id="employmentDetails" name="Employment Details" camunda:formKey="employment-details"/>
-        <sequenceFlow id="toEmploymentDetailsGateway" sourceRef="employmentDetails" targetRef="employmentDetailsGateway"/>
-        <exclusiveGateway id="employmentDetailsGateway"/>
+        <userTask id="employmentDetails" name="Employment Details" camunda:formKey="employment-details" />
+        <sequenceFlow id="toEmploymentDetailsGateway" sourceRef="employmentDetails" targetRef="employmentDetailsGateway" />
+        <exclusiveGateway id="employmentDetailsGateway" />
         <sequenceFlow id="flow4" sourceRef="employmentDetailsGateway" targetRef="submission">
             <conditionExpression xsi:type="tFormalExpression">${uiEvent != 'BACK'}</conditionExpression>
         </sequenceFlow>
         <sequenceFlow id="back3" sourceRef="employmentDetailsGateway" targetRef="loanDetails">
             <conditionExpression xsi:type="tFormalExpression">${uiEvent == 'BACK'}</conditionExpression>
         </sequenceFlow>
-
-        <!-- Submission Step with Exclusive Gateway for BACK -->
-        <userTask id="submission" name="Review and Submit" camunda:formKey="submission"/>
-        <sequenceFlow id="toSubmissionGateway" sourceRef="submission" targetRef="submissionGateway"/>
-        <exclusiveGateway id="submissionGateway"/>
+        <userTask id="submission" name="Review and Submit" camunda:formKey="submission" />
+        <sequenceFlow id="toSubmissionGateway" sourceRef="submission" targetRef="submissionGateway" />
+        <exclusiveGateway id="submissionGateway" />
         <sequenceFlow id="flow5" sourceRef="submissionGateway" targetRef="endEvent">
             <conditionExpression xsi:type="tFormalExpression">${uiEvent != 'BACK'}</conditionExpression>
         </sequenceFlow>
         <sequenceFlow id="back4" sourceRef="submissionGateway" targetRef="employmentDetails">
             <conditionExpression xsi:type="tFormalExpression">${uiEvent == 'BACK'}</conditionExpression>
         </sequenceFlow>
-
-        <endEvent id="endEvent" name="End"/>
+        <endEvent id="endEvent" name="End" />
     </process>
+    <bpmndi:BPMNDiagram id="BPMNDiagram_loanApp">
+        <bpmndi:BPMNPlane id="BPMNPlane_loanApp" bpmnElement="loanApplicationProcess_v1">
+            <!-- Start Event -->
+            <bpmndi:BPMNShape id="BPMNShape_startEvent" bpmnElement="startEvent">
+                <dc:Bounds x="152" y="102" width="36" height="36"/>
+            </bpmndi:BPMNShape>
+
+            <!-- Personal Information Task -->
+            <bpmndi:BPMNShape id="BPMNShape_personalInformation" bpmnElement="personalInformation">
+                <dc:Bounds x="250" y="80" width="100" height="80"/>
+            </bpmndi:BPMNShape>
+
+            <!-- Loan Details Task -->
+            <bpmndi:BPMNShape id="BPMNShape_loanDetails" bpmnElement="loanDetails">
+                <dc:Bounds x="450" y="80" width="100" height="80"/>
+            </bpmndi:BPMNShape>
+
+            <!-- Loan Details Gateway -->
+            <bpmndi:BPMNShape id="BPMNShape_loanDetailsGateway" bpmnElement="loanDetailsGateway">
+                <dc:Bounds x="600" y="95" width="50" height="50"/>
+            </bpmndi:BPMNShape>
+
+            <!-- Employment Details Task -->
+            <bpmndi:BPMNShape id="BPMNShape_employmentDetails" bpmnElement="employmentDetails">
+                <dc:Bounds x="750" y="80" width="100" height="80"/>
+            </bpmndi:BPMNShape>
+
+            <!-- Employment Details Gateway -->
+            <bpmndi:BPMNShape id="BPMNShape_employmentDetailsGateway" bpmnElement="employmentDetailsGateway">
+                <dc:Bounds x="900" y="95" width="50" height="50"/>
+            </bpmndi:BPMNShape>
+
+            <!-- Submission Task -->
+            <bpmndi:BPMNShape id="BPMNShape_submission" bpmnElement="submission">
+                <dc:Bounds x="1050" y="80" width="100" height="80"/>
+            </bpmndi:BPMNShape>
+
+            <!-- Submission Gateway -->
+            <bpmndi:BPMNShape id="BPMNShape_submissionGateway" bpmnElement="submissionGateway">
+                <dc:Bounds x="1200" y="95" width="50" height="50"/>
+            </bpmndi:BPMNShape>
+
+            <!-- End Event -->
+            <bpmndi:BPMNShape id="BPMNShape_endEvent" bpmnElement="endEvent">
+                <dc:Bounds x="1350" y="102" width="36" height="36"/>
+            </bpmndi:BPMNShape>
+
+            <!-- Sequence Flows -->
+            <bpmndi:BPMNEdge id="BPMNEdge_flow1" bpmnElement="flow1">
+                <di:waypoint x="188" y="120"/>
+                <di:waypoint x="250" y="120"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="BPMNEdge_flow2" bpmnElement="flow2">
+                <di:waypoint x="350" y="120"/>
+                <di:waypoint x="450" y="120"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="BPMNEdge_toLoanDetailsGateway" bpmnElement="toLoanDetailsGateway">
+                <di:waypoint x="550" y="120"/>
+                <di:waypoint x="600" y="120"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="BPMNEdge_flow3" bpmnElement="flow3">
+                <di:waypoint x="625" y="120"/>
+                <di:waypoint x="750" y="120"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="BPMNEdge_back2" bpmnElement="back2">
+                <di:waypoint x="600" y="95"/>
+                <di:waypoint x="600" y="60"/>
+                <di:waypoint x="300" y="60"/>
+                <di:waypoint x="300" y="80"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="BPMNEdge_toEmploymentDetailsGateway" bpmnElement="toEmploymentDetailsGateway">
+                <di:waypoint x="850" y="120"/>
+                <di:waypoint x="900" y="120"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="BPMNEdge_flow4" bpmnElement="flow4">
+                <di:waypoint x="925" y="120"/>
+                <di:waypoint x="1050" y="120"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="BPMNEdge_back3" bpmnElement="back3">
+                <di:waypoint x="900" y="95"/>
+                <di:waypoint x="900" y="60"/>
+                <di:waypoint x="500" y="60"/>
+                <di:waypoint x="500" y="80"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="BPMNEdge_toSubmissionGateway" bpmnElement="toSubmissionGateway">
+                <di:waypoint x="1150" y="120"/>
+                <di:waypoint x="1200" y="120"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="BPMNEdge_flow5" bpmnElement="flow5">
+                <di:waypoint x="1225" y="120"/>
+                <di:waypoint x="1350" y="120"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge id="BPMNEdge_back4" bpmnElement="back4">
+                <di:waypoint x="1200" y="95"/>
+                <di:waypoint x="1200" y="60"/>
+                <di:waypoint x="800" y="60"/>
+                <di:waypoint x="800" y="80"/>
+            </bpmndi:BPMNEdge>
+        </bpmndi:BPMNPlane>
+    </bpmndi:BPMNDiagram>
 </definitions>
