@@ -16,6 +16,7 @@ public class FormFieldConfig {
 
     public static class ProcessConfig {
         private String name;
+        private String businessKey;
         private Map<String, StepConfig> steps = new LinkedHashMap<>();
 
         public String getName() {
@@ -24,6 +25,14 @@ public class FormFieldConfig {
 
         public void setName(String name) {
             this.name = name;
+        }
+
+        public String getBusinessKey() {
+            return businessKey;
+        }
+
+        public void setBusinessKey(String businessKey) {
+            this.businessKey = businessKey;
         }
 
         public Map<String, StepConfig> getSteps() {

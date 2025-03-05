@@ -47,10 +47,10 @@ public class ProcessService {
         variables.put("createdAt", LocalDateTime.now());
 
         // Start process directly after process selection
-        runtimeService.startProcessInstanceByKey("loanApplicationProcess_v1", processId, variables);
+        runtimeService.startProcessInstanceByKey(formFieldConfig.getProcesses().get(processType).getBusinessKey(), processId, variables);
 
         // Move straight to the first step
-        return new Process(processId, "STEP_ONE"); // or whatever the actual first step is
+        return new Process(processId, "INIT"); // or whatever the actual first step is
     }
 
     public Process submitStep(String processId, String step, String uiEvent, Map<String, Object> formData) {
@@ -153,6 +153,5 @@ public class ProcessService {
         summary.put("formData", sortedFormData);
         return summary;
     }
-
 
 }

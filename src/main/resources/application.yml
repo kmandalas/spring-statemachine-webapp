@@ -31,6 +31,7 @@ form:
   processes:
     loan_application:
       name: Loan Application
+      businessKey: loanApplicationProcess_v1
       steps:
 #        selection:
 #          title: "Select Process Type"

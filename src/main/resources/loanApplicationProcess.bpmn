@@ -5,11 +5,15 @@
              xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
              xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_loanApp" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.32.0">
+
     <process id="loanApplicationProcess_v1" name="Loan Application Process" isExecutable="true" camunda:historyTimeToLive="180">
+
         <startEvent id="startEvent" name="Start" />
         <sequenceFlow id="flow1" sourceRef="startEvent" targetRef="personalInformation" />
+
         <userTask id="personalInformation" name="Personal Information" camunda:formKey="personal-information" />
         <sequenceFlow id="flow2" sourceRef="personalInformation" targetRef="loanDetails" />
+
         <userTask id="loanDetails" name="Loan Details" camunda:formKey="loan-details" />
         <sequenceFlow id="toLoanDetailsGateway" sourceRef="loanDetails" targetRef="loanDetailsGateway" />
         <exclusiveGateway id="loanDetailsGateway" />
@@ -19,6 +23,7 @@
         <sequenceFlow id="back2" sourceRef="loanDetailsGateway" targetRef="personalInformation">
             <conditionExpression xsi:type="tFormalExpression">${uiEvent == 'BACK'}</conditionExpression>
         </sequenceFlow>
+
         <userTask id="employmentDetails" name="Employment Details" camunda:formKey="employment-details" />
         <sequenceFlow id="toEmploymentDetailsGateway" sourceRef="employmentDetails" targetRef="employmentDetailsGateway" />
         <exclusiveGateway id="employmentDetailsGateway" />
@@ -28,6 +33,7 @@
         <sequenceFlow id="back3" sourceRef="employmentDetailsGateway" targetRef="loanDetails">
             <conditionExpression xsi:type="tFormalExpression">${uiEvent == 'BACK'}</conditionExpression>
         </sequenceFlow>
+
         <userTask id="submission" name="Review and Submit" camunda:formKey="submission" />
         <sequenceFlow id="toSubmissionGateway" sourceRef="submission" targetRef="submissionGateway" />
         <exclusiveGateway id="submissionGateway" />
@@ -39,6 +45,7 @@
         </sequenceFlow>
         <endEvent id="endEvent" name="End" />
     </process>
+
     <bpmndi:BPMNDiagram id="BPMNDiagram_loanApp">
         <bpmndi:BPMNPlane id="BPMNPlane_loanApp" bpmnElement="loanApplicationProcess_v1">
             <!-- Start Event -->
