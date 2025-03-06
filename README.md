@@ -6,7 +6,7 @@ This project implements a **dynamic, UI-driven multi-step process** using **Spri
 
 ## 🚀 Features
 
-- **Dynamic Process Definition**: Steps and fields are configurable via `application.yml`.
+- **Dynamic Forms Definition**: Forms and fields per step are configurable via `application.yml`.
 - **Spring State Machine**: Manages state transitions between steps.
 - **PostgreSQL JSONB Storage**: Efficiently stores form data as structured JSON.
 - **REST API**: Provides endpoints to interact with the process.
