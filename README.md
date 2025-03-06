@@ -1,13 +1,13 @@
-# Multi-Step Process with Spring Boot & Spring State Machine
+# Multi-Step Process with Spring Boot & Camunda
 
-This project implements a **dynamic, UI-driven multi-step process** using **Spring Boot** and **Spring State Machine**, allowing for configurable workflows and seamless state transitions. The backend utilizes **PostgreSQL with JSONB support** to efficiently store form data.
+This project implements a **dynamic, UI-driven multi-step process** using **Spring Boot** and **Camunda BPM**, allowing for configurable workflows and seamless state transitions. The backend utilizes **PostgreSQL with JSONB support** to efficiently store form data.
 
 ---
 
 ## 🚀 Features
 
-- **Dynamic Process Definition**: Steps and fields are configurable via `application.yml`.
-- **Spring State Machine**: Manages state transitions between steps.
+- **Forms Definition**: Forms and fields per step are configurable via `application.yml`.
+- **Camunda BPM**: Manages the process flow and transitions.
 - **PostgreSQL JSONB Storage**: Efficiently stores form data as structured JSON.
 - **REST API**: Provides endpoints to interact with the process.
 - **Docker Compose Support**: Easily spin up a Postgres database.
@@ -27,8 +27,8 @@ This project implements a **dynamic, UI-driven multi-step process** using **Spri
 │   ├── ProcessApplication # Main Spring Boot App Entry
 │
 ├── src/main/resources
-│   ├── application.yml    # Configurable Process Definitions
-│
+│   ├── application.yml    # Configurable Form Definitions
+│   |── loanApplicationProcess.bpmn    # Camunda process definition
 ├── docker-compose.yml     # Docker Compose for PostgreSQL
 ├── README.md              # Project Documentation
 ```
@@ -47,18 +47,11 @@ This project implements a **dynamic, UI-driven multi-step process** using **Spri
 
 ```sh
 git clone https://github.com/kmandalas/spring-statemachine-webapp.git
+git checkout camunda
 cd spring-statemachine-webapp
 ```
 
-### Step 2: Start PostgreSQL with Docker
-
-```sh
-docker-compose up -d
-```
-
-This will start a PostgreSQL database instance.
-
-### Step 3: Run the Application
+### Step 2: Run the Application
 
 ```sh
 mvn spring-boot:run
@@ -66,60 +59,18 @@ mvn spring-boot:run
 
 Application will be available at `http://localhost:8080`
 
----
-
-## 📝 API Endpoints
-
-### Start a New Process
-
-```http
-POST /api/process/start
-Content-Type: application/json
-{
-  "processType": "loan_application"
-}
-```
-
-### Submit a Step
-
-```http
-POST /api/process/{processId}/submit
-Content-Type: application/json
-{
-  "step": "step_one",
-  "formData": { "firstName": "John", "lastName": "Doe" }
-}
-```
-
-### Get Process Summary
-
-```http
-GET /api/process/{processId}/summary
-```
+Camunda cockpit is accesible at `http://localhost:8081/camunda`
 
 ---
 
-## 🔄 State Machine Diagram
+## 🔄 BPMN Diagram
 
-The application uses **Spring State Machine** to manage step transitions, form rendering and submissions dynamically.
+The application uses **Camunda BPM** to manage step transitions.
 
-```
-stateDiagram-v2
-    [*] --> SELECTION
-    SELECTION --> STEP_ONE: PROCESS_SELECTED
-    STEP_ONE --> STEP_TWO: STEP_ONE_SUBMIT
-    STEP_TWO --> STEP_THREE: STEP_TWO_SUBMIT
-    STEP_THREE --> SUBMISSION: STEP_THREE_SUBMIT
-    SUBMISSION --> [*]: FINAL_SUBMIT
-    STEP_TWO --> STEP_ONE: BACK
-    STEP_THREE --> STEP_TWO: BACK
-    SUBMISSION --> STEP_THREE: BACK
-```
-
-![State Machine Diagram](https://github.com/kmandalas/spring-statemachine-webapp/blob/main/diagram-1.png)
+![BPMN Diagram](https://github.com/kmandalas/spring-statemachine-webapp/blob/main/diagram-1.png)
 
 
-State transitions are controlled based on `application.yml` and `StateMachineConfig.java`
+Application behavior (steps & forms) are based on `application.yml` and `loanApplicationProcess.bpmn`
 
 ---
 
@@ -145,7 +96,7 @@ form:
 ## 🛠️ Tech Stack
 
 - **Spring Boot 3**
-- **Spring State Machine**
+- **Camunda BPM**
 - **Spring Data JPA** (PostgreSQL JSONB support)
 - **Docker & Docker Compose**
 - **Jackson** (JSON Parsing)
