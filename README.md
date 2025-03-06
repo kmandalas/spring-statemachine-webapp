@@ -67,7 +67,7 @@ Camunda cockpit is accesible at `http://localhost:8081/camunda`
 
 The application uses **Camunda BPM** to manage step transitions.
 
-![BPMN Diagram](https://github.com/kmandalas/spring-statemachine-webapp/blob/main/diagram-1.png)
+![BPMN Diagram](https://github.com/kmandalas/spring-statemachine-webapp/blob/camunda/diagram-1.png)
 
 
 Application behavior (steps & forms) are based on `application.yml` and `loanApplicationProcess.bpmn`
