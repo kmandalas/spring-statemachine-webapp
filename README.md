@@ -1,34 +1,45 @@
 # Multi-Step Process with Spring Boot & Camunda
 
-This project implements a **dynamic, UI-driven multi-step process** using **Spring Boot** and **Camunda BPM**, allowing for configurable workflows and seamless state transitions. The backend utilizes **PostgreSQL with JSONB support** to efficiently store form data.
+This branch implements a **dynamic, UI-driven multi-step process** using **Spring Boot** and **Camunda BPM**, 
+allowing for configurable workflows and seamless state transitions. The backend utilizes **PostgreSQL with JSONB support** to efficiently store form data.
+
+The project serves as a demonstration for the requirements outlined in my DZone article
+[Dynamic Forms With Camunda and Spring StateMachine](https://dzone.com/articles/dynamic-forms-camunda-spring-statemachine).
+
+ℹ️ Check other branches for variants.
 
 ---
 
 ## 🚀 Features
 
-- **Forms Definition**: Forms and fields per step are configurable via `application.yml`.
-- **Camunda BPM**: Manages the process flow and transitions.
+- **Dynamic Forms Definition**: Forms and fields per step are configurable via `application.yml`.
+- **Camunda BPM**: Manages state transitions between steps.
 - **PostgreSQL JSONB Storage**: Efficiently stores form data as structured JSON.
 - **REST API**: Provides endpoints to interact with the process.
 - **Docker Compose Support**: Easily spin up a Postgres database.
+- **Basic UI for testing**: HTML/JavaScript page for testing via browser
 
 ---
 
 ## 🏗️ Project Structure
 
 ```
-├── src/main/java/com/example/process
-│   ├── controller         # REST Controllers
-│   ├── service            # Business Logic & State Handling
-│   ├── repository         # JPA Repositories
-│   ├── model              # Entities & Data Models
-│   ├── statemachine       # State Machine Configurations
-│   ├── config             # App Configurations (YAML Parsing, etc.)
-│   ├── ProcessApplication # Main Spring Boot App Entry
+├── src/main/java/com/example/demolition # 😀
+│   ├── config         # App configuration
+│   ├── controller     # REST & MVC Controllers
+│   ├── dto            
+│   ├── entity         # Entity POJOs
+│   ├── exception      
+│   ├── repository     # JPA Repositories
+│   ├── service        # Business Logic
+│   ├── DemolitionApplication # Main Spring Boot App Entry
 │
 ├── src/main/resources
-│   ├── application.yml    # Configurable Form Definitions
-│   |── loanApplicationProcess.bpmn    # Camunda process definition
+│   ├── application.yml                # Configurable Process Forms Definitions
+│   ├── loanApplicationProcess.bpmn    # Camunda process definition
+│   ├── templates
+│       ├── home.html      # Demo homepage 
+│       ├── process.html   # Demo dynamic form rendering page     
 ├── docker-compose.yml     # Docker Compose for PostgreSQL
 ├── README.md              # Project Documentation
 ```
@@ -65,12 +76,13 @@ Camunda cockpit is accesible at `http://localhost:8081/camunda`
 
 ## 🔄 BPMN Diagram
 
-The application uses **Camunda BPM** to manage step transitions.
+The application uses **Camunda BPM** to basically manage step transitions.
+Form rendering and submissions are relying on StateMachine state but are handled independently.
 
 ![BPMN Diagram](https://github.com/kmandalas/spring-statemachine-webapp/blob/camunda/diagram-1.png)
 
 
-Application behavior (steps & forms) are based on `application.yml` and `loanApplicationProcess.bpmn`
+Application behavior (steps & forms) is based on `loanApplicationProcess.bpmn` and `application.yml`
 
 ---
 
