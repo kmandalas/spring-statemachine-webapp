@@ -1,6 +1,8 @@
 # Multi-Step Process with Spring Boot & Spring State Machine
 
-This project implements a **dynamic, UI-driven multi-step process** using **Spring Boot** and **Spring State Machine**, allowing for configurable workflows and seamless state transitions. The backend utilizes **PostgreSQL with JSONB support** to efficiently store form data.
+This project implements a **dynamic, UI-driven multi-step process** using **Spring Boot** and **Spring State Machine**, 
+allowing for configurable workflows and seamless state transitions. 
+The backend utilizes **PostgreSQL with JSONB support** to efficiently store form data.
 
 ---
 
@@ -11,24 +13,27 @@ This project implements a **dynamic, UI-driven multi-step process** using **Spri
 - **PostgreSQL JSONB Storage**: Efficiently stores form data as structured JSON.
 - **REST API**: Provides endpoints to interact with the process.
 - **Docker Compose Support**: Easily spin up a Postgres database.
+- **Basic UI for testing**: HTML/JavaScript page for testing via browser
 
 ---
 
 ## 🏗️ Project Structure
 
 ```
-├── src/main/java/com/example/process
-│   ├── controller         # REST Controllers
-│   ├── service            # Business Logic & State Handling
-│   ├── repository         # JPA Repositories
-│   ├── model              # Entities & Data Models
-│   ├── statemachine       # State Machine Configurations
-│   ├── config             # App Configurations (YAML Parsing, etc.)
-│   ├── ProcessApplication # Main Spring Boot App Entry
+├── src/main/java/com/example/demolition # 😀
+│   ├── config         # App & StateMachine configuration
+│   ├── controller     # REST & MVC Controllers
+│   ├── entity         # Entity POJOs
+│   ├── repository     # JPA Repositories
+│   ├── service        # Business Logic
+│   ├── statemachine   # StateMachine Enums
+│   ├── DemolitionApplication # Main Spring Boot App Entry
 │
 ├── src/main/resources
-│   ├── application.yml    # Configurable Process Definitions
-│
+│   ├── application.yml    # Configurable Process Forms Definitions
+│   ├── templates
+│       ├── home.html      # Demo homepage 
+│       ├── process.html   # Demo dynamic form rendering page     
 ├── docker-compose.yml     # Docker Compose for PostgreSQL
 ├── README.md              # Project Documentation
 ```
@@ -50,15 +55,7 @@ git clone https://github.com/kmandalas/spring-statemachine-webapp.git
 cd spring-statemachine-webapp
 ```
 
-### Step 2: Start PostgreSQL with Docker
-
-```sh
-docker-compose up -d
-```
-
-This will start a PostgreSQL database instance.
-
-### Step 3: Run the Application
+### Step 2: Run the Application
 
 ```sh
 mvn spring-boot:run
@@ -101,7 +98,8 @@ GET /api/process/{processId}/summary
 
 ## 🔄 State Machine Diagram
 
-The application uses **Spring State Machine** to manage step transitions, form rendering and submissions dynamically.
+The application is based on **Spring State Machine** to basically manage step transitions.
+Form rendering and submissions are relying on StateMachine state but are handled independently.
 
 ```
 stateDiagram-v2
@@ -119,7 +117,7 @@ stateDiagram-v2
 ![State Machine Diagram](https://github.com/kmandalas/spring-statemachine-webapp/blob/main/diagram-1.png)
 
 
-State transitions are controlled based on `application.yml` and `StateMachineConfig.java`
+States and transitions are configured at `StateMachineConfig.java`
 
 ---
 
