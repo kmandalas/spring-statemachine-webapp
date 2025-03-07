@@ -16,7 +16,7 @@ The project serves as a demonstration for the requirements outlined in my DZone 
 - **Camunda BPM**: Manages state transitions between steps.
 - **PostgreSQL JSONB Storage**: Efficiently stores form data as structured JSON.
 - **REST API**: Provides endpoints to interact with the process.
-- **Docker Compose Support**: Easily spin up a Postgres database.
+- **Docker Compose Support**: Easily spin up a Postgres database & the Camunda Cockpit.
 - **Basic UI for testing**: HTML/JavaScript page for testing via browser
 
 ---
